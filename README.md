@@ -3,7 +3,7 @@
 A self-hosted personal finance tracker for people who want their money data on their own machine. Track accounts, log transactions, set category budgets, and share an account with a partner or housemate — without handing a third party read access to your bank.
 
 ![CI](https://github.com/zakaria17amir/Fintrack/actions/workflows/ci.yml/badge.svg)
-![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4)
+![PHP](https://img.shields.io/badge/PHP-8.4+-777BB4)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20)
 
 ![Reports](docs/screenshots/reports.png)
@@ -31,7 +31,7 @@ The interesting constraint is **shared accounts**. A joint account isn't just "t
 
 | Layer | Choice |
 |---|---|
-| Framework | Laravel 13 (PHP 8.3+) |
+| Framework | Laravel 13 (PHP 8.4+) |
 | Auth | Laravel Breeze (Blade) |
 | Database | SQLite |
 | Frontend | Blade + Tailwind CSS 3, Flowbite, Alpine.js |
