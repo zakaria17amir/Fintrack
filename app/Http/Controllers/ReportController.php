@@ -2,76 +2,34 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ReportFilterRequest;
 use App\Models\Category;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
+use App\Services\ReportData;
+use Illuminate\Http\JsonResponse;
 
 class ReportController extends Controller
 {
-    public function __invoke(Request $request)
+    /** The reports page: a React island that renders its first paint from this payload. */
+    public function __invoke(ReportFilterRequest $request, ReportData $reports)
     {
-        $user = $request->user();
-        $categories = Category::orderBy('name')->get();
+        $filters = $request->validated();
 
-        $dateFrom = $request->get('date_from', now()->subMonths(6)->startOfMonth()->toDateString());
-        $dateTo = $request->get('date_to', now()->endOfMonth()->toDateString());
-        $selectedCategories = $request->get('categories', []);
+        $initial = [
+            'filters' => $filters,
+            'categories' => Category::orderBy('name')->get(['id', 'name', 'color']),
+            'data' => $reports->for($request->user(), $filters['date_from'], $filters['date_to'], $filters['categories']),
+        ];
 
-        $query = $user->transactions()
-            ->where('status', 'cleared')
-            ->whereBetween('transaction_date', [$dateFrom, $dateTo]);
+        return view('reports.index', compact('initial'));
+    }
 
-        if (! empty($selectedCategories)) {
-            $query->whereIn('category_id', $selectedCategories);
-        }
+    /** JSON for filter changes on the reports page. */
+    public function data(ReportFilterRequest $request, ReportData $reports): JsonResponse
+    {
+        $filters = $request->validated();
 
-        // Category breakdown
-        $categoryBreakdown = (clone $query)
-            ->where('type', 'expense')
-            ->selectRaw('category_id, SUM(amount) as total')
-            ->groupBy('category_id')
-            ->get()
-            ->map(function ($item) {
-                $item->category = Category::find($item->category_id);
-
-                return $item;
-            });
-
-        // Monthly trend
-        $startDate = Carbon::parse($dateFrom)->startOfMonth();
-        $endDate = Carbon::parse($dateTo)->endOfMonth();
-        $monthlyTrend = collect();
-
-        $current = $startDate->copy();
-        while ($current->lte($endDate)) {
-            $income = (clone $query)
-                ->where('type', 'income')
-                ->whereMonth('transaction_date', $current->month)
-                ->whereYear('transaction_date', $current->year)
-                ->sum('amount');
-
-            $expense = (clone $query)
-                ->where('type', 'expense')
-                ->whereMonth('transaction_date', $current->month)
-                ->whereYear('transaction_date', $current->year)
-                ->sum('amount');
-
-            $monthlyTrend->push([
-                'month' => $current->format('M Y'),
-                'income' => $income,
-                'expense' => $expense,
-            ]);
-
-            $current->addMonth();
-        }
-
-        $totalIncome = (clone $query)->where('type', 'income')->sum('amount');
-        $totalExpense = (clone $query)->where('type', 'expense')->sum('amount');
-
-        return view('reports.index', compact(
-            'categories', 'categoryBreakdown', 'monthlyTrend',
-            'dateFrom', 'dateTo', 'selectedCategories',
-            'totalIncome', 'totalExpense'
-        ));
+        return response()->json(
+            $reports->for($request->user(), $filters['date_from'], $filters['date_to'], $filters['categories'])
+        );
     }
 }

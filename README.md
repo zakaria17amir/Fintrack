@@ -5,7 +5,9 @@ A self-hosted personal finance tracker for people who want their money data on t
 ![CI](https://github.com/zakaria17amir/Fintrack/actions/workflows/ci.yml/badge.svg)
 ![PHP](https://img.shields.io/badge/PHP-8.4+-777BB4)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20)
-![Tests](https://img.shields.io/badge/tests-47%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-62%20passing-brightgreen)
+![React](https://img.shields.io/badge/React-19-61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6)
 
 ![Reports](docs/screenshots/reports.png)
 
@@ -20,7 +22,7 @@ The interesting constraint is **shared accounts**. A joint account isn't just "t
 - **Accounts** — checking, savings, credit, cash. Balances update automatically as transactions are created, edited, or deleted.
 - **Transactions** — income/expense with category, status (pending/cleared/cancelled), notes, recurring intervals, and receipt image upload.
 - **Budgets** — monthly per-category limits with live progress bars and over-budget warnings.
-- **Reports** — date-range and multi-category filtering, spending-by-category pie chart, six-month income-vs-expense trend, and a breakdown table.
+- **Reports** — a React + TypeScript page inside the Blade app: date-range and multi-category filters that update the figures without a page reload, a spending-by-category pie chart, a monthly income-vs-expense trend (Recharts), and a breakdown table. Served by a validated JSON endpoint that computes every figure in three grouped SQL queries.
 - **Account sharing** — invite another user to an account as viewer or editor; permissions are enforced server-side on every route.
 - **Admin panel** — user management, category CRUD, and read-only oversight of all transactions, gated by role middleware.
 
@@ -35,9 +37,10 @@ The interesting constraint is **shared accounts**. A joint account isn't just "t
 | Framework | Laravel 13 (PHP 8.4+) |
 | Auth | Laravel Breeze (Blade) |
 | Database | SQLite |
-| Frontend | Blade + Tailwind CSS 3, Flowbite, Alpine.js |
+| Frontend | Blade + Tailwind CSS 3, Flowbite, Alpine.js; Reports page in React 19 + TypeScript (strict) with Recharts |
+| Charts | Recharts (reports), Chart.js (dashboard) |
 | Build | Vite 8 |
-| Tests | PHPUnit feature tests, Pint in CI |
+| Tests | PHPUnit feature tests, Vitest + React Testing Library, Pint in CI |
 
 ## Quick start
 
@@ -97,7 +100,9 @@ app/
   Models/                  Account, Budget, Category, Transaction, User
 database/
   migrations/  seeders/  factories/
-resources/views/           47 Blade templates
+app/Services/ReportData.php  Report aggregation (totals, by category, by month)
+resources/js/reports/      React + TypeScript reports island and its tests
+resources/views/           Blade templates
 routes/web.php             Application routes
 tests/                     PHPUnit feature + unit tests
 ```
@@ -105,10 +110,12 @@ tests/                     PHPUnit feature + unit tests
 ## Testing
 
 ```bash
-composer run test
+composer run test     # PHPUnit
+npm test              # Vitest + React Testing Library
+npm run typecheck     # tsc, strict
 ```
 
-47 feature tests (126 assertions) run on every push, alongside a Pint style check. Beyond the Breeze authentication and profile suite, they cover the rules that matter for a ledger:
+54 PHPUnit feature tests (150 assertions) and 8 Vitest tests run on every push, alongside a Pint style check and a strict TypeScript check. Beyond the Breeze authentication and profile suite, they cover the rules that matter for a ledger:
 
 | Suite | What it pins down |
 | --- | --- |
@@ -117,8 +124,27 @@ composer run test
 | `BudgetTest` | Budgets are stored per month and scoped to their owner |
 | `AdminAccessTest` | The admin area is closed to regular users |
 | `ReportTest` | Reports count only the user's own cleared transactions |
+| `ReportDataTest` | The reports JSON: totals, category breakdown and zero-filled months in cents; filters; `422` for bad dates or unknown categories; a fixed query count for any range |
+| `report.test.ts` / `ReportsApp.test.tsx` | Money formatting from cents, percentage shares, chart series; first paint from the server payload without a fetch, refetch on filter change, error with retry |
 
 Writing these surfaced a real authorization hole: transaction creation checked nothing about the target account, so any user could post against another user's account id and change its balance. Both the create and update requests now require edit permission on the target account.
+
+## Reports: React island
+
+The rest of FinTrack is server-rendered Blade, and it stays that way. The Reports page is the one
+screen where interactivity pays off, so it is a React + TypeScript component mounted into the Blade
+layout rather than a rewrite of the app:
+
+- **First paint without a spinner.** The Blade view embeds the initial report as JSON in a
+  `data-initial` attribute, so React renders real numbers immediately.
+- **Filters without reloads.** Changing a date or ticking a category calls `GET /reports/data`,
+  a JSON endpoint behind the same session auth, validated by `ReportFilterRequest` (dates must be
+  `Y-m-d`, the range must not run backwards, category ids must exist). A newer request aborts an
+  older one, and the query string is kept in sync so the view stays bookmarkable.
+- **Fewer queries.** The old controller issued two SQL queries per month plus one per category. The
+  `ReportData` service computes totals, the category breakdown and the monthly trend in three grouped
+  queries regardless of the range — a test pins the count.
+- **Money stays in cents** through the API and is only divided by 100 when formatted.
 
 ## Roadmap
 

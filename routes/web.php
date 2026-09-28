@@ -33,6 +33,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('budgets', BudgetController::class)->except(['show']);
 
     Route::get('/reports', ReportController::class)->name('reports');
+    Route::get('/reports/data', [ReportController::class, 'data'])->name('reports.data');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

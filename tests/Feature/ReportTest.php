@@ -28,6 +28,7 @@ class ReportTest extends TestCase
 
         $this->actingAs($user)->get(route('reports'))
             ->assertOk()
-            ->assertViewHas('totalExpense', 3000);
+            ->assertViewHas('initial', fn ($initial) => $initial['data']['totals']['expense'] === 3000)
+            ->assertSee('id="reports-root"', false);
     }
 }

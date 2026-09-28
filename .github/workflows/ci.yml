@@ -35,13 +35,18 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: npm
 
       - name: Build frontend assets
         run: |
           npm ci
           npm run build
+
+      - name: Type-check and unit-test the React reports island
+        run: |
+          npm run typecheck
+          npm test
 
       - name: Run migrations
         run: php artisan migrate --force
