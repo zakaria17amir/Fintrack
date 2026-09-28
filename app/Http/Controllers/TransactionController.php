@@ -8,6 +8,7 @@ use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class TransactionController extends Controller
@@ -79,8 +80,10 @@ class TransactionController extends Controller
         unset($data['receipt']);
         $data['is_recurring'] = $request->boolean('is_recurring');
 
-        $transaction = Transaction::create($data);
-        $this->applyBalanceChange($transaction, 1);
+        // The row and the balance change commit together, or neither does.
+        DB::transaction(function () use ($data) {
+            $this->applyBalanceChange(Transaction::create($data), 1);
+        });
 
         return redirect()->route('transactions.index')
             ->with('success', 'Transaction created successfully.');
@@ -122,10 +125,11 @@ class TransactionController extends Controller
         unset($data['receipt']);
         $data['is_recurring'] = $request->boolean('is_recurring');
 
-        $transaction->update($data);
-
-        $this->applyBalanceChange($oldTransaction, -1);
-        $this->applyBalanceChange($transaction, 1);
+        DB::transaction(function () use ($transaction, $oldTransaction, $data) {
+            $transaction->update($data);
+            $this->applyBalanceChange($oldTransaction, -1);
+            $this->applyBalanceChange($transaction, 1);
+        });
 
         return redirect()->route('transactions.index')
             ->with('success', 'Transaction updated successfully.');
@@ -139,9 +143,10 @@ class TransactionController extends Controller
             Storage::disk('public')->delete($transaction->receipt_path);
         }
 
-        $this->applyBalanceChange($transaction, -1);
-
-        $transaction->delete();
+        DB::transaction(function () use ($transaction) {
+            $this->applyBalanceChange($transaction, -1);
+            $transaction->delete();
+        });
 
         return redirect()->route('transactions.index')
             ->with('success', 'Transaction deleted successfully.');
