@@ -4,10 +4,15 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
     plugins: [
-        laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/reports/main.tsx'],
-            refresh: true,
-        }),
+        // The Laravel plugin only serves dev/build, and refuses to start its dev server under CI.
+        ...(process.env.VITEST
+            ? []
+            : [
+                  laravel({
+                      input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/reports/main.tsx'],
+                      refresh: true,
+                  }),
+              ]),
         react(),
     ],
     test: {
