@@ -3,6 +3,7 @@
 A self-hosted personal finance tracker for people who want their money data on their own machine. Track accounts, log transactions, set category budgets, and share an account with a partner or housemate — without handing a third party read access to your bank.
 
 ![CI](https://github.com/zakaria17amir/Fintrack/actions/workflows/ci.yml/badge.svg)
+![Docker](https://img.shields.io/badge/image-ghcr.io-2496ED)
 ![PHP](https://img.shields.io/badge/PHP-8.4+-777BB4)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20)
 ![Tests](https://img.shields.io/badge/tests-62%20passing-brightgreen)
@@ -40,7 +41,30 @@ The interesting constraint is **shared accounts**. A joint account isn't just "t
 | Frontend | Blade + Tailwind CSS 3, Flowbite, Alpine.js; Reports page in React 19 + TypeScript (strict) with Recharts |
 | Charts | Recharts (reports), Chart.js (dashboard) |
 | Build | Vite 8 |
+| Delivery | Docker (FrankenPHP), published to GHCR by GitHub Actions |
 | Tests | PHPUnit feature tests, Vitest + React Testing Library, Pint in CI |
+
+## Run with Docker
+
+Every push to `main` that passes CI publishes an image to GitHub Container Registry. It runs the app
+on [FrankenPHP](https://frankenphp.dev) on port 8080, with the SQLite database and uploaded receipts
+on volumes:
+
+```bash
+docker run -p 8080:8080 -e SEED_DEMO=true   -v fintrack-data:/data -v fintrack-storage:/app/storage/app   ghcr.io/zakaria17amir/fintrack:latest
+```
+
+Or build from source with `docker compose up --build`, then open <http://localhost:8080> and sign in
+with a demo account below.
+
+On start the container creates the database if needed, generates an `APP_KEY` once (kept in
+`/data/app_key` unless you pass one), runs migrations, seeds demo data on first start when
+`SEED_DEMO=true`, links public storage and caches config and routes.
+
+The CI `publish` job only runs after the test job passes. It builds the image, starts it and runs
+`docker/smoke-test.sh` — health check, guest redirect, a real form login with CSRF, the React reports
+page and its JSON endpoint, and a `422` for a bad filter — before pushing `latest` and `sha-<commit>`
+tags.
 
 ## Quick start
 
@@ -100,6 +124,7 @@ app/
   Models/                  Account, Budget, Category, Transaction, User
 database/
   migrations/  seeders/  factories/
+docker/                    Container entrypoint and smoke test
 app/Services/ReportData.php  Report aggregation (totals, by category, by month)
 resources/js/reports/      React + TypeScript reports island and its tests
 resources/views/           Blade templates

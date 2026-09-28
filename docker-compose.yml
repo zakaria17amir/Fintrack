@@ -1,0 +1,16 @@
+services:
+  fintrack:
+    image: ghcr.io/zakaria17amir/fintrack:latest
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      # Seeds the demo accounts the first time the database is created.
+      SEED_DEMO: "true"
+    volumes:
+      - fintrack-data:/data
+      - fintrack-storage:/app/storage/app
+
+volumes:
+  fintrack-data:
+  fintrack-storage:
