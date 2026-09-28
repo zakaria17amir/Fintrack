@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ReportController extends Controller
@@ -20,7 +21,7 @@ class ReportController extends Controller
             ->where('status', 'cleared')
             ->whereBetween('transaction_date', [$dateFrom, $dateTo]);
 
-        if (!empty($selectedCategories)) {
+        if (! empty($selectedCategories)) {
             $query->whereIn('category_id', $selectedCategories);
         }
 
@@ -32,12 +33,13 @@ class ReportController extends Controller
             ->get()
             ->map(function ($item) {
                 $item->category = Category::find($item->category_id);
+
                 return $item;
             });
 
         // Monthly trend
-        $startDate = \Carbon\Carbon::parse($dateFrom)->startOfMonth();
-        $endDate = \Carbon\Carbon::parse($dateTo)->endOfMonth();
+        $startDate = Carbon::parse($dateFrom)->startOfMonth();
+        $endDate = Carbon::parse($dateTo)->endOfMonth();
         $monthlyTrend = collect();
 
         $current = $startDate->copy();

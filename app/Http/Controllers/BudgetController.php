@@ -17,7 +17,7 @@ class BudgetController extends Controller
 
         $budgets = $user->budgets()
             ->with('category')
-            ->whereDate('month', $month . '-01')
+            ->whereDate('month', $month.'-01')
             ->get();
 
         return view('budgets.index', compact('budgets', 'month'));
@@ -34,7 +34,7 @@ class BudgetController extends Controller
     {
         $data = $request->validated();
         $data['user_id'] = $request->user()->id;
-        $data['month'] = $data['month'] . '-01';
+        $data['month'] = $data['month'].'-01';
 
         Budget::create($data);
 
@@ -54,7 +54,7 @@ class BudgetController extends Controller
     public function update(UpdateBudgetRequest $request, Budget $budget)
     {
         $data = $request->validated();
-        $data['month'] = $data['month'] . '-01';
+        $data['month'] = $data['month'].'-01';
 
         $budget->update($data);
 

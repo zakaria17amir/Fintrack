@@ -14,10 +14,15 @@ class TransactionPolicy
 
     public function view(User $user, Transaction $transaction): bool
     {
-        if ($user->isAdmin()) return true;
-        if ($transaction->user_id === $user->id) return true;
+        if ($user->isAdmin()) {
+            return true;
+        }
+        if ($transaction->user_id === $user->id) {
+            return true;
+        }
 
         $account = $transaction->account;
+
         return $account->sharedUsers()->where('user_id', $user->id)->exists();
     }
 
@@ -28,10 +33,15 @@ class TransactionPolicy
 
     public function update(User $user, Transaction $transaction): bool
     {
-        if ($user->isAdmin()) return true;
-        if ($transaction->user_id === $user->id) return true;
+        if ($user->isAdmin()) {
+            return true;
+        }
+        if ($transaction->user_id === $user->id) {
+            return true;
+        }
 
         $account = $transaction->account;
+
         return $account->sharedUsers()
             ->where('user_id', $user->id)
             ->wherePivot('permission', 'edit')
@@ -40,10 +50,15 @@ class TransactionPolicy
 
     public function delete(User $user, Transaction $transaction): bool
     {
-        if ($user->isAdmin()) return true;
-        if ($transaction->user_id === $user->id) return true;
+        if ($user->isAdmin()) {
+            return true;
+        }
+        if ($transaction->user_id === $user->id) {
+            return true;
+        }
 
         $account = $transaction->account;
+
         return $account->sharedUsers()
             ->where('user_id', $user->id)
             ->wherePivot('permission', 'edit')

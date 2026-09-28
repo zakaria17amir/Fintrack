@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -47,12 +48,14 @@ class DashboardController extends Controller
             ->groupBy('category_id')
             ->get()
             ->map(function ($item) {
-                $item->category = \App\Models\Category::find($item->category_id);
+                $item->category = Category::find($item->category_id);
+
                 return $item;
             });
 
         $monthlyTrend = collect(range(5, 0))->map(function ($i) use ($user) {
             $date = now()->subMonths($i);
+
             return [
                 'month' => $date->format('M Y'),
                 'income' => $user->transactions()

@@ -14,8 +14,12 @@ class AccountPolicy
 
     public function view(User $user, Account $account): bool
     {
-        if ($user->isAdmin()) return true;
-        if ($account->isOwnedBy($user)) return true;
+        if ($user->isAdmin()) {
+            return true;
+        }
+        if ($account->isOwnedBy($user)) {
+            return true;
+        }
 
         return $account->sharedUsers()->where('user_id', $user->id)->exists();
     }
@@ -27,8 +31,12 @@ class AccountPolicy
 
     public function update(User $user, Account $account): bool
     {
-        if ($user->isAdmin()) return true;
-        if ($account->isOwnedBy($user)) return true;
+        if ($user->isAdmin()) {
+            return true;
+        }
+        if ($account->isOwnedBy($user)) {
+            return true;
+        }
 
         return $account->sharedUsers()
             ->where('user_id', $user->id)
@@ -38,14 +46,18 @@ class AccountPolicy
 
     public function delete(User $user, Account $account): bool
     {
-        if ($user->isAdmin()) return true;
+        if ($user->isAdmin()) {
+            return true;
+        }
 
         return $account->isOwnedBy($user);
     }
 
     public function manageSharing(User $user, Account $account): bool
     {
-        if ($user->isAdmin()) return true;
+        if ($user->isAdmin()) {
+            return true;
+        }
 
         return $account->isOwnedBy($user);
     }

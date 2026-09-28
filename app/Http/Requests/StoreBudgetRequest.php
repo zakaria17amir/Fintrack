@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Budget;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreBudgetRequest extends FormRequest
 {
@@ -25,9 +25,9 @@ class StoreBudgetRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $exists = \App\Models\Budget::where('user_id', $this->user()->id)
+            $exists = Budget::where('user_id', $this->user()->id)
                 ->where('category_id', $this->category_id)
-                ->whereDate('month', $this->month . '-01')
+                ->whereDate('month', $this->month.'-01')
                 ->exists();
 
             if ($exists) {

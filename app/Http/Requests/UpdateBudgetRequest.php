@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Budget;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateBudgetRequest extends FormRequest
@@ -25,9 +26,9 @@ class UpdateBudgetRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $budget = $this->route('budget');
-            $exists = \App\Models\Budget::where('user_id', $this->user()->id)
+            $exists = Budget::where('user_id', $this->user()->id)
                 ->where('category_id', $this->category_id)
-                ->whereDate('month', $this->month . '-01')
+                ->whereDate('month', $this->month.'-01')
                 ->where('id', '!=', $budget->id)
                 ->exists();
 
