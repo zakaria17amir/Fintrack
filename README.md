@@ -5,6 +5,7 @@ A self-hosted personal finance tracker for people who want their money data on t
 ![CI](https://github.com/zakaria17amir/Fintrack/actions/workflows/ci.yml/badge.svg)
 ![PHP](https://img.shields.io/badge/PHP-8.4+-777BB4)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20)
+![Tests](https://img.shields.io/badge/tests-47%20passing-brightgreen)
 
 ![Reports](docs/screenshots/reports.png)
 
@@ -36,7 +37,7 @@ The interesting constraint is **shared accounts**. A joint account isn't just "t
 | Database | SQLite |
 | Frontend | Blade + Tailwind CSS 3, Flowbite, Alpine.js |
 | Build | Vite 8 |
-| Tests | PHPUnit |
+| Tests | PHPUnit feature tests, Pint in CI |
 
 ## Quick start
 
@@ -107,11 +108,20 @@ tests/                     PHPUnit feature + unit tests
 composer run test
 ```
 
-Current coverage is the authentication and profile suite that ships with Breeze. Domain coverage for transactions, budgets, and the sharing permission rules is the main open gap — see below.
+47 feature tests (126 assertions) run on every push, alongside a Pint style check. Beyond the Breeze authentication and profile suite, they cover the rules that matter for a ledger:
+
+| Suite | What it pins down |
+| --- | --- |
+| `TransactionBalanceTest` | Every write moves the balance exactly once — create, change amount, flip expense/income, move between accounts, delete — and a failed balance update leaves no orphaned transaction behind |
+| `AccountSharingPermissionTest` | Viewers can read but not write, editors can write, strangers get `403`, and only the owner manages sharing |
+| `BudgetTest` | Budgets are stored per month and scoped to their owner |
+| `AdminAccessTest` | The admin area is closed to regular users |
+| `ReportTest` | Reports count only the user's own cleared transactions |
+
+Writing these surfaced a real authorization hole: transaction creation checked nothing about the target account, so any user could post against another user's account id and change its balance. Both the create and update requests now require edit permission on the target account.
 
 ## Roadmap
 
-- [ ] Feature tests for transaction CRUD, budget rollover, and shared-account permission enforcement
 - [ ] CSV import/export
 - [ ] Multi-currency support
 - [ ] Recurring transactions generated automatically rather than flagged manually
