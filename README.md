@@ -170,9 +170,3 @@ layout rather than a rewrite of the app:
   `ReportData` service computes totals, the category breakdown and the monthly trend in three grouped
   queries regardless of the range — a test pins the count.
 - **Money stays in cents** through the API and is only divided by 100 when formatted.
-
-## Roadmap
-
-- [ ] CSV import/export
-- [ ] Multi-currency support
-- [ ] Recurring transactions generated automatically rather than flagged manually
