@@ -2,13 +2,18 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Account;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreTransactionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        // A transaction changes its account's balance, so the user must be allowed to edit that
+        // account. A missing account is left to the `exists` rule (422).
+        $account = Account::find($this->input('account_id'));
+
+        return ! $account || $this->user()->can('update', $account);
     }
 
     public function rules(): array

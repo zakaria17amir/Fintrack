@@ -2,13 +2,19 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Account;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateTransactionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('transaction'));
+        // Also check the target account, so a transaction cannot be moved onto an account the
+        // user may not edit.
+        $account = Account::find($this->input('account_id'));
+
+        return $this->user()->can('update', $this->route('transaction'))
+            && (! $account || $this->user()->can('update', $account));
     }
 
     public function rules(): array
